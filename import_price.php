@@ -65,6 +65,11 @@
     $query = $hDB -> query("UPDATE `wp_postmeta` SET `meta_value` = '" . $price . "' WHERE `post_id` = " . $post_id . " AND `meta_key` = '_regular_price'");
   }
 
+  function import_update_sale_by_post_id($hDB, $post_id, $sale){
+    $query = $hDB -> query("UPDATE `wp_postmeta` SET `meta_value` = '" . $sale . "' WHERE `post_id` = " . $post_id . " AND `meta_key` = '_sale_price'");
+    $query = $hDB -> query("UPDATE `wp_postmeta` SET `meta_value` = '" . $sale . "' WHERE `post_id` = " . $post_id . " AND `meta_key` = '_price'");
+  }
+
   if (file_exists( "/var/www/electrop/data/www/zilmet.ru/export/" . IMPORT_FILE_NAME )) 
   {
       $hDB = new mysqli( DB_HOST, DB_USER, DB_PASSWORD, DB_NAME );
@@ -82,6 +87,7 @@
         $sku = $product->Artikul;
         $price = $product->Price;
         $title = $product->attributes();
+        $sale = $product->Sale;
 
         if( preg_match( "/\n/", $sku[0] ) || $sku[0] == "" ) 
         {
@@ -97,10 +103,17 @@
 
           if($row == "") {
             $noFound[] = $sku[0];
-            // $noFound[] = $title;
-          }
+          }else{
+            import_update_price_by_post_id($hDB, $row['post_id'], $price);
 
-          import_update_price_by_post_id($hDB, $row['post_id'], $price);
+            // Проверяем не явл ли зап частью
+            if( !in_array( $sku[0], $exceptionSale )) {
+              import_update_sale_by_post_id($hDB, $row['post_id'], $sale);
+            }else{
+              echo $sku[0];
+              echo "<br>";
+            }
+          }
         }
         else
         {
